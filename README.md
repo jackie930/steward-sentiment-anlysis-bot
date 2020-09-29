@@ -11,8 +11,6 @@
 
 2018年google推出了bert模型，这个模型的性能要远超于以前所使用的模型，总的来说就是很牛。但是训练bert模型是异常昂贵的，对于一般人来说并不需要自己单独训练bert，只需要加载预训练模型，就可以完成相应的任务。
 
-![picuture](Document/bert.jpg)
-
 ## Quick Start Guide
 ### Train
 使用`SageMaker BYOC`训练的步骤
@@ -35,9 +33,6 @@ sh build_and_push.sh bert-sentiment-anylsis
 
 此刻你可以看到你的SageMaker 控制台中生成了对应的`Training Job`
 
-![picuture](Document/training_job.png)
-
-![准确率](./source/Document/accuracy.txt)
 
 ### Deploy
 * 利用`EndpointDeploy.py`，使用`模型文件`和`Docker Image`和`.source/bert/run_classifier.py`生成`endpoint`
@@ -51,7 +46,6 @@ python EndpointDeploy.py \
 ```
 此刻你可以看到你的SageMaker 控制台中生成了对应的`endpoint`
 
-![picuture](Document/endpoint.png)
 
 ### Bot - 使用docker进行部署的机器人
 
