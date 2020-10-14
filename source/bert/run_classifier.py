@@ -127,9 +127,9 @@ flags.DEFINE_integer(
     "num_tpu_cores", 8,
     "Only used if `use_tpu` is True. Total number of TPU cores to use.")
 
-flags.DEFINE_float(
-    "pos_weight", 2,
-    "used for unbalanced dataset, set to 1 if dataset is balanced.")
+flags.DEFINE_list(
+    "weight_list", 1,10,
+    "used for unbalanced dataset, set to 1*n if dataset is balanced.")
 
 
 class InputExample(object):
@@ -621,7 +621,7 @@ def _truncate_seq_pair(tokens_a, tokens_b, max_length):
 
 
 def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
-                 labels, num_labels, use_one_hot_embeddings,pos_weight):
+                 labels, num_labels, use_one_hot_embeddings,weight_list):
     """Creates a classification model."""
     model = modeling.BertModel(
         config=bert_config,
@@ -656,24 +656,22 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
         logits = tf.nn.bias_add(logits, output_bias)
         # add class weights for logits
         #TODO: fix weight setting
-        class_weight = tf.constant([1, 10])
-        weighted_logits = tf.mul(logits, class_weight)
+        class_weight = tf.constant(weight_list)
+        weighted_logits = tf.matmul(logits, class_weight)
 
         probabilities = tf.nn.softmax(weighted_logits, axis=-1)
         log_probs = tf.nn.log_softmax(weighted_logits, axis=-1)
-
-
         one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
 
         per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs , axis=-1)
         loss = tf.reduce_mean(per_example_loss)
-        tf.logging.info("*** loss weight  ***", pos_weight)
+        tf.logging.info("*** loss weight  ***", weight_list)
         return (loss, per_example_loss, logits, probabilities)
 
 
 def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
                      num_train_steps, num_warmup_steps, use_tpu,
-                     use_one_hot_embeddings,pos_weight):
+                     use_one_hot_embeddings,weight_list):
     """Returns `model_fn` closure for TPUEstimator."""
 
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
@@ -697,7 +695,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
         (total_loss, per_example_loss, logits, probabilities) = create_model(
             bert_config, is_training, input_ids, input_mask, segment_ids, label_ids,
-            num_labels, use_one_hot_embeddings, pos_weight)
+            num_labels, use_one_hot_embeddings, weight_list)
 
         tvars = tf.trainable_variables()
         initialized_variable_names = {}
@@ -909,7 +907,7 @@ def main(_):
         num_warmup_steps=num_warmup_steps,
         use_tpu=FLAGS.use_tpu,
         use_one_hot_embeddings=FLAGS.use_tpu,
-        pos_weight = FLAGS.pos_weight)
+        weight_list = FLAGS.weight_list)
 
     # If TPU is not available, this will fall back to normal Estimator on CPU
     # or GPU.
