@@ -654,12 +654,18 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
 
         logits = tf.matmul(output_layer, output_weights, transpose_b=True)
         logits = tf.nn.bias_add(logits, output_bias)
-        probabilities = tf.nn.softmax(logits, axis=-1)
-        log_probs = tf.nn.log_softmax(logits, axis=-1)
+        # add class weights for logits
+        #TODO: fix weight setting
+        class_weight = tf.constant([1, 10])
+        weighted_logits = tf.mul(logits, class_weight)
+
+        probabilities = tf.nn.softmax(weighted_logits, axis=-1)
+        log_probs = tf.nn.log_softmax(weighted_logits, axis=-1)
+
 
         one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
 
-        per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs * pos_weight, axis=-1)
+        per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs , axis=-1)
         loss = tf.reduce_mean(per_example_loss)
         tf.logging.info("*** loss weight  ***", pos_weight)
         return (loss, per_example_loss, logits, probabilities)
