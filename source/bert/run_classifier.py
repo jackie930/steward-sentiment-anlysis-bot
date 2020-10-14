@@ -656,7 +656,7 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
         logits = tf.nn.bias_add(logits, output_bias)
         # add class weights for logits
         #TODO: fix weight setting
-        class_weight = tf.constant(weight_list,dtype="int32")
+        class_weight = tf.constant(weight_list)
         tf.logging.info("<<<<<<<<<", class_weight)
         weighted_logits = tf.matmul(logits, class_weight)
 
