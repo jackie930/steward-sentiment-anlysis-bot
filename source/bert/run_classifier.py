@@ -656,13 +656,10 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
         logits = tf.nn.bias_add(logits, output_bias)
         # add class weights for logits
         #TODO: fix weight setting
-        print("<<<<<<<<<", weight_list)
         weight_list = [float(i) for i in weight_list]
-        print("<<<<<<<<<", weight_list)
         class_weight = tf.constant(weight_list)
-        print("<<<<<<<<<", class_weight)
+        tf.logging.info ("<<<<<< logits: ", logits)
         weighted_logits = tf.matmul(logits, class_weight)
-
         probabilities = tf.nn.softmax(weighted_logits, axis=-1)
         log_probs = tf.nn.log_softmax(weighted_logits, axis=-1)
         one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
