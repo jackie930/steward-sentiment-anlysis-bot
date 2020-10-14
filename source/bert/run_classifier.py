@@ -128,7 +128,7 @@ flags.DEFINE_integer(
     "Only used if `use_tpu` is True. Total number of TPU cores to use.")
 
 flags.DEFINE_list(
-    "weight_list", 1,10,
+    "weight_list", "1,10",
     "used for unbalanced dataset, set to 1*n if dataset is balanced.")
 
 
