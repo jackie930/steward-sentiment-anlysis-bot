@@ -659,7 +659,7 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
         weight_list = [float(i) for i in weight_list]
         class_weight = tf.constant(weight_list)
         tf.logging.info ("<<<<<< logits: ", logits)
-        weighted_logits = tf.matmul(logits, class_weight)
+        weighted_logits = tf.multiply(logits, class_weight)
         probabilities = tf.nn.softmax(weighted_logits, axis=-1)
         log_probs = tf.nn.log_softmax(weighted_logits, axis=-1)
         one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
