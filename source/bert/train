@@ -53,16 +53,15 @@ def _run(cmd):
     #subprocess.run(cmd, shell=True, check=True, executable='/bin/bash')
 
     # link the log streams to stdout/err so they will be logged to the container logs
-    #subprocess.check_call(['ln', '-sf', '/dev/stdout', '/var/log/nginx/access.log'])
-    #subprocess.check_call(['ln', '-sf', '/dev/stderr', '/var/log/nginx/error.log'])
+    subprocess.check_call(['ln', '-sf', '/dev/stdout', 'tensorflow.log'])
 
-    #process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ)
-    #stdout, stderr = process.communicate()
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ)
+    stdout, stderr = process.communicate()
 
-    #return_code = process.poll()
-    #if return_code:
-     #   error_msg = 'Return Code: {}, CMD: {}, Err: {}'.format(return_code, cmd, stderr)
-     #   raise Exception(error_msg)
+    return_code = process.poll()
+    if return_code:
+        error_msg = 'Return Code: {}, CMD: {}, Err: {}'.format(return_code, cmd, stderr)
+        raise Exception(error_msg)
 
 def _hyperparameters_to_cmd_args(hyperparameters):
     """
@@ -121,6 +120,11 @@ if __name__ == '__main__':
 
         _run(train_cmd)
         print('Training complete.')
+
+        #show log file
+        with_open
+
+        #
 
         # A zero exit code causes the job to be marked a Succeeded.
         sys.exit(0)
