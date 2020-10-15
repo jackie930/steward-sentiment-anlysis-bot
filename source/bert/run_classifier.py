@@ -838,6 +838,9 @@ def convert_examples_to_features(examples, label_list, max_seq_length,
 def main(_):
     tf.logging.set_verbosity(tf.logging.INFO)
 
+    print("<<<<< TEST print")
+    tf.logging.info("<<<<< TEST")
+
     processors = {
         "cola": ColaProcessor,
         "mnli": MnliProcessor,
@@ -1051,7 +1054,6 @@ def main(_):
 
 
 if __name__ == "__main__":
-    tf.logging.set_verbosity(tf.logging.INFO)
     flags.mark_flag_as_required("data_dir")
     flags.mark_flag_as_required("task_name")
     flags.mark_flag_as_required("vocab_file")
