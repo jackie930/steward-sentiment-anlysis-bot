@@ -47,10 +47,12 @@ default_params = ['--model-dir', str(model_path)]
 def _run(cmd):
     """Invokes your training algorithm."""
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ)
-    while process.poll() is None:
-            out = process.stdout.readline()
-            if out != "":
-                print (out)
+    stdout, stderr = process.communicate()
+    return_code = process.poll()
+
+    while return_code is None:
+            output = process.stdout.readline()
+            print (output.strip())
 
 def _hyperparameters_to_cmd_args(hyperparameters):
     """
