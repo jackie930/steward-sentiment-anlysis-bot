@@ -47,7 +47,7 @@ default_params = ['--model-dir', str(model_path)]
 def _run(cmd):
     """Invokes your training algorithm."""
     print ("<<<cmd 1: ", cmd)
-    cmd = cmd + ' 2>&1 | tee -a my_log_file.txt && exit ${PIPESTATUS}'
+    cmd = cmd.append('2>&1 | tee -a my_log_file.txt && exit ${PIPESTATUS}')
     print ("<<<cmd 2: ", cmd)
     subprocess.run(cmd, shell=True, check=True, executable='/bin/bash')
 
