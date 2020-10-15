@@ -55,7 +55,7 @@ def _run(cmd):
             if output == '' and process.poll() is not None:
                 break
             if output:
-                print output.strip()
+                print (output.strip())
         return_code = process.poll()
 
    # return_code = process.poll()
