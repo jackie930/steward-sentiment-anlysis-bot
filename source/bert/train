@@ -24,6 +24,7 @@ import json
 import sys
 import subprocess
 import traceback
+import logging
 
 # These are the paths to where SageMaker mounts interesting things in your source.
 prefix = '/opt/ml/'
@@ -85,6 +86,22 @@ if __name__ == '__main__':
 
         logger = logging.getLogger()
         logger.info("<<<<<< test log!")
+
+
+        # get TF logger
+        log = logging.getLogger('tensorflow')
+        log.setLevel(logging.DEBUG)
+
+        # create formatter and add it to the handlers
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+        # create file handler which logs even debug messages
+        # fh = logging.FileHandler('tensorflow.log')
+        fh = logging.StreamHandler(sys.stdout)
+        fh.setLevel(logging.DEBUG)
+        fh.setFormatter(formatter)
+        log.addHandler(fh)
+
         with open(param_path, 'r') as tc:
             training_params = json.load(tc)
 
