@@ -50,19 +50,9 @@ def _run(cmd):
     stdout, stderr = process.communicate()
     return_code = process.poll()
 
-    while True:
+    while return_code is None:
             output = process.stdout.readline()
-            if output == '' and process.poll() is not None:
-                break
-            if output:
-                print (output.strip())
-        return_code = process.poll()
-
-   # return_code = process.poll()
-    #if return_code:
-     #   error_msg = 'Return Code: {}, CMD: {}, Err: {}'.format(return_code, cmd, stderr)
-    #    raise Exception(error_msg)
-
+            print (output.strip())
 
 def _hyperparameters_to_cmd_args(hyperparameters):
     """
