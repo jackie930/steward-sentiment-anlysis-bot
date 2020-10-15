@@ -839,8 +839,7 @@ def main(_):
     tf.logging.set_verbosity(tf.logging.INFO)
 
     print("<<<<< TEST print")
-    import sys
-    sys.stderr.write("xxx")
+
     tf.logging.info("<<<<< TEST")
 
     processors = {
