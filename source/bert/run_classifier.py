@@ -128,7 +128,7 @@ flags.DEFINE_integer(
     "Only used if `use_tpu` is True. Total number of TPU cores to use.")
 
 flags.DEFINE_list(
-    "weight_list", "1,10",
+    "weight_list", "1,2",
     "used for unbalanced dataset, set to 1*n if dataset is balanced.")
 
 
@@ -659,6 +659,7 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
         weight_list = [float(i) for i in weight_list]
         class_weight = tf.constant(weight_list)
         tf.logging.info ("<<<<<< logits: ", logits)
+        print (class_weight)
         weighted_logits = tf.multiply(logits, class_weight)
         probabilities = tf.nn.softmax(weighted_logits, axis=-1)
         log_probs = tf.nn.log_softmax(weighted_logits, axis=-1)
@@ -1050,6 +1051,7 @@ def main(_):
 
 
 if __name__ == "__main__":
+    tf.logging.set_verbosity(tf.logging.INFO)
     flags.mark_flag_as_required("data_dir")
     flags.mark_flag_as_required("task_name")
     flags.mark_flag_as_required("vocab_file")

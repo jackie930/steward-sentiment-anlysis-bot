@@ -73,6 +73,18 @@ if __name__ == '__main__':
         # Amazon SageMaker makes our specified hyperparameters available within the
         # /opt/ml/input/config/hyperparameters.json.
         # https://docs.aws.amazon.com/sagemaker/latest/dg/your-algorithms-training-algo.html#your-algorithms-training-algo-running-container
+        logging.basicConfig(
+                    level=logging.INFO,
+                    format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
+                    datefmt="%m/%d/%Y %H:%M:%S",
+                    handlers=[
+                        # logging.FileHandler(logfile),
+                        logging.StreamHandler(sys.stdout)
+                    ],
+                )
+
+        logger = logging.getLogger()
+        logger.info("<<<<<< test log!")
         with open(param_path, 'r') as tc:
             training_params = json.load(tc)
 
