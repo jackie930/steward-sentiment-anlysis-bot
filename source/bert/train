@@ -59,6 +59,7 @@ def _run(cmd):
     for line in iter(process.stdout.readline, b''):
         print (line)
 
+    process.stdout.close()
     process.wait()
 
     #stdout, stderr = process.communicate()
