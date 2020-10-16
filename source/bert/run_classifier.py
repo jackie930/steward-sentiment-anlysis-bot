@@ -1056,6 +1056,26 @@ def main(_):
 
 
 if __name__ == "__main__":
+    import logging
+    import sys
+
+    # get TF logger
+    log = logging.getLogger('tensorflow')
+    log.setLevel(logging.DEBUG)
+
+    # create formatter and add it to the handlers
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    # create file handler which logs even debug messages
+    #fh = logging.FileHandler('tensorflow.log')
+    fh = logging.StreamHandler(sys.stdout)
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
+    log.addHandler(fh)
+
+    tf.logging.set_verbosity(tf.logging.INFO)
+    tf.logging.info("<<<<< TEST")
+
     flags.mark_flag_as_required("data_dir")
     flags.mark_flag_as_required("task_name")
     flags.mark_flag_as_required("vocab_file")
