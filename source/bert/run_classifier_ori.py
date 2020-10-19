@@ -127,10 +127,6 @@ flags.DEFINE_integer(
     "num_tpu_cores", 8,
     "Only used if `use_tpu` is True. Total number of TPU cores to use.")
 
-flags.DEFINE_list(
-    "weight_list", "1,2",
-    "used for unbalanced dataset, set to 1*n if dataset is balanced.")
-
 
 class InputExample(object):
     """A single training/test example for simple sequence classification."""
@@ -422,45 +418,6 @@ class ChnsenticorpProcessor(DataProcessor):
                 InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
         return examples
 
-class GTProcessor(DataProcessor):
-    """Processor for the Chnsenticorp data set."""
-
-    def get_train_examples(self, data_dir):
-        """See base class."""
-        return self._create_examples(
-            self._read_tsv(os.path.join(data_dir, "train.tsv")), "train")
-
-    def get_dev_examples(self, data_dir):
-        """See base class."""
-        return self._create_examples(
-            self._read_tsv(os.path.join(data_dir, "dev.tsv")), "dev")
-
-    def get_test_examples(self, data_dir):
-        """See base class."""
-        return self._create_examples(
-            self._read_tsv(os.path.join(data_dir, "test.tsv")), "test")
-
-    def get_labels(self):
-        """See base class."""
-        return ["1", "0", "-1"]
-
-    def _create_examples(self, lines, set_type):
-        """Creates examples for the training and dev sets."""
-        examples = []
-        for (i, line) in enumerate(lines):
-            # Only the test set has a header
-            if i == 0:
-                continue
-            guid = "%s-%s" % (set_type, i)
-            if set_type == "test":
-                text_a = tokenization.convert_to_unicode(line[1])
-                label = "0"
-            else:
-                text_a = tokenization.convert_to_unicode(line[1])
-                label = tokenization.convert_to_unicode(line[0])
-            examples.append(
-                InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
-        return examples
 
 def convert_single_example(ex_index, example, label_list, max_seq_length,
                            tokenizer):
@@ -660,7 +617,7 @@ def _truncate_seq_pair(tokens_a, tokens_b, max_length):
 
 
 def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
-                 labels, num_labels, use_one_hot_embeddings,weight_list):
+                 labels, num_labels, use_one_hot_embeddings):
     """Creates a classification model."""
     model = modeling.BertModel(
         config=bert_config,
@@ -693,27 +650,20 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
 
         logits = tf.matmul(output_layer, output_weights, transpose_b=True)
         logits = tf.nn.bias_add(logits, output_bias)
-        # add class weights for logits
-        #TODO: fix weight setting
-        weight_list = [float(i) for i in weight_list]
-        class_weight = tf.constant(weight_list)
-        tf.logging.info ("<<<<<< logits: ", logits)
-        print (class_weight)
-        weighted_logits = tf.multiply(logits, class_weight)
-        probabilities = tf.nn.softmax(weighted_logits, axis=-1)
-        log_probs = tf.nn.log_softmax(weighted_logits, axis=-1)
+        probabilities = tf.nn.softmax(logits, axis=-1)
+        log_probs = tf.nn.log_softmax(logits, axis=-1)
+
         one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
 
-        per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs , axis=-1)
+        per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
         loss = tf.reduce_mean(per_example_loss)
-        tf.logging.info("*** loss weight  ***", weight_list)
-        print ("###loss weight ")
+
         return (loss, per_example_loss, logits, probabilities)
 
 
 def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
                      num_train_steps, num_warmup_steps, use_tpu,
-                     use_one_hot_embeddings,weight_list):
+                     use_one_hot_embeddings):
     """Returns `model_fn` closure for TPUEstimator."""
 
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
@@ -737,7 +687,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
         (total_loss, per_example_loss, logits, probabilities) = create_model(
             bert_config, is_training, input_ids, input_mask, segment_ids, label_ids,
-            num_labels, use_one_hot_embeddings, weight_list)
+            num_labels, use_one_hot_embeddings)
 
         tvars = tf.trainable_variables()
         initialized_variable_names = {}
@@ -765,18 +715,14 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
         output_spec = None
         if mode == tf.estimator.ModeKeys.TRAIN:
-            # output loss during training
+
             train_op = optimization.create_optimizer(
                 total_loss, learning_rate, num_train_steps, num_warmup_steps, use_tpu)
-            #train_op, new_global_step = optimization.create_optimizer(
-              #  total_loss, learning_rate, num_train_steps, num_warmup_steps, use_tpu)
-            tensors_to_log = {'train loss': total_loss}
-            logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=1)
+
             output_spec = tf.contrib.tpu.TPUEstimatorSpec(
                 mode=mode,
                 loss=total_loss,
                 train_op=train_op,
-                training_hooks=[logging_hook],
                 scaffold_fn=scaffold_fn)
         elif mode == tf.estimator.ModeKeys.EVAL:
 
@@ -785,9 +731,18 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
                 accuracy = tf.metrics.accuracy(
                     labels=label_ids, predictions=predictions, weights=is_real_example)
                 loss = tf.metrics.mean(values=per_example_loss, weights=is_real_example)
+                auc = tf.metrics.auc(labels=label_ids, predictions=predictions,
+                                     weights=is_real_example)
+                precision = tf.metrics.precision(labels=label_ids, predictions=predictions,
+                                                 weights=is_real_example)
+                recall = tf.metrics.recall(labels=label_ids, predictions=predictions,
+                                           weights=is_real_example)
                 return {
                     "eval_accuracy": accuracy,
                     "eval_loss": loss,
+                    "auc": auc,
+                    "precision": precision,
+                    "recall": recall,
                 }
 
             eval_metrics = (metric_fn,
@@ -882,17 +837,12 @@ def convert_examples_to_features(examples, label_list, max_seq_length,
 def main(_):
     tf.logging.set_verbosity(tf.logging.INFO)
 
-    print("<<<<< TEST print")
-
-    tf.logging.info("<<<<< TEST")
-
     processors = {
         "cola": ColaProcessor,
         "mnli": MnliProcessor,
         "mrpc": MrpcProcessor,
         "xnli": XnliProcessor,
         'chnsenticorp': ChnsenticorpProcessor,
-        'gt': GTProcessor
     }
 
     tokenization.validate_case_matches_checkpoint(FLAGS.do_lower_case,
@@ -957,8 +907,7 @@ def main(_):
         num_train_steps=num_train_steps,
         num_warmup_steps=num_warmup_steps,
         use_tpu=FLAGS.use_tpu,
-        use_one_hot_embeddings=FLAGS.use_tpu,
-        weight_list = FLAGS.weight_list)
+        use_one_hot_embeddings=FLAGS.use_tpu)
 
     # If TPU is not available, this will fall back to normal Estimator on CPU
     # or GPU.
@@ -1100,26 +1049,6 @@ def main(_):
 
 
 if __name__ == "__main__":
-    import logging
-    import sys
-
-    # get TF logger
-    log = logging.getLogger('tensorflow')
-    log.setLevel(logging.DEBUG)
-
-    # create formatter and add it to the handlers
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-    # create file handler which logs even debug messages
-    #fh = logging.FileHandler('tensorflow.log')
-    fh = logging.StreamHandler(sys.stdout)
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(formatter)
-    log.addHandler(fh)
-
-    tf.logging.set_verbosity(tf.logging.INFO)
-    tf.logging.info("<<<<< TEST")
-
     flags.mark_flag_as_required("data_dir")
     flags.mark_flag_as_required("task_name")
     flags.mark_flag_as_required("vocab_file")
