@@ -57,12 +57,16 @@ def _run(cmd):
 
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ,bufsize=1)
 
+    print ("<<<<<< TEST 1")
     while process.poll() is None:
         for line in iter(process.stdout.readline, b''):
             print (line)
 
+    print ("<<<<<< TEST 2")
     process.stdout.close()
+    print ("<<<<<< TEST 3")
     process.wait()
+    print ("<<<<<< TEST 4")
 
     '''
     #stdout, stderr = process.communicate()
