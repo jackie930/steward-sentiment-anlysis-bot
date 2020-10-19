@@ -64,11 +64,13 @@ def _run(cmd):
     process.stdout.close()
     process.wait()
 
+    '''
     #stdout, stderr = process.communicate()
-    return_code = process.poll()
-    if return_code:
-        error_msg = 'Return Code: {}, CMD: {}, Err: {}'.format(return_code, cmd, stderr)
-        raise Exception(error_msg)
+    #return_code = process.poll()
+    #if return_code:
+     #   error_msg = 'Return Code: {}, CMD: {}, Err: {}'.format(return_code, cmd, stderr)
+      #  raise Exception(error_msg)
+    '''
 
 def _hyperparameters_to_cmd_args(hyperparameters):
     """
