@@ -59,7 +59,7 @@ def _run(cmd):
 
     while process.poll() is None:
         for line in iter(process.stdout.readline, b''):
-        print (line)
+            print (line)
 
     process.stdout.close()
     process.wait()
