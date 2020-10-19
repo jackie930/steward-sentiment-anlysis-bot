@@ -765,12 +765,12 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
         output_spec = None
         if mode == tf.estimator.ModeKeys.TRAIN:
-            # output loss during training
-            train_op = optimization.create_optimizer(
+            # output loss during training https://github.com/google-research/bert/issues/70
+            #train_op = optimization.create_optimizer(
+            #    total_loss, learning_rate, num_train_steps, num_warmup_steps, use_tpu)
+            train_op, new_global_step = optimization.create_optimizer(
                 total_loss, learning_rate, num_train_steps, num_warmup_steps, use_tpu)
-            #train_op, new_global_step = optimization.create_optimizer(
-              #  total_loss, learning_rate, num_train_steps, num_warmup_steps, use_tpu)
-            tensors_to_log = {'train loss': total_loss}
+            tensors_to_log = {'train loss': total_loss,'global_step': new_global_step}
             logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=1)
             output_spec = tf.contrib.tpu.TPUEstimatorSpec(
                 mode=mode,
