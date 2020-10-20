@@ -712,15 +712,14 @@ def _truncate_seq_pair(tokens_a, tokens_b, max_length):
 def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
                  labels, num_labels, use_one_hot_embeddings, fp16):
     """Creates a classification model."""
-    comp_type = tf.float16 if fp16 else tf.float32
+    #comp_type = tf.float16 if fp16 else tf.float32
     model = modeling.BertModel(
         config=bert_config,
         is_training=is_training,
         input_ids=input_ids,
         input_mask=input_mask,
         token_type_ids=segment_ids,
-        use_one_hot_embeddings=use_one_hot_embeddings,
-        comp_type=comp_type)
+        use_one_hot_embeddings=use_one_hot_embeddings)
 
     # In the demo, we are doing a simple classification task on the entire
     # segment.

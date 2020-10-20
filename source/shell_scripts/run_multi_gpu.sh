@@ -13,7 +13,7 @@ python ./bert/run_custom_classifier.py \
     --do_eval=true \
     --do_predict=true \
     --save_for_serving=true \
-    --data_dir='../../data/label_f_stock_v2_all'' \
+    --data_dir='../../data/label_f_stock_v2_all' \
     --vocab_file=$BERT_BASE_DIR/vocab.txt \
     --bert_config_file=$BERT_BASE_DIR/bert_config.json \
     --init_checkpoint=$BERT_BASE_DIR/bert_model.ckpt \
