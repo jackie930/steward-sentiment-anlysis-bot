@@ -11,6 +11,30 @@
 
 2018年google推出了bert模型，这个模型的性能要远超于以前所使用的模型，总的来说就是很牛。但是训练bert模型是异常昂贵的，对于一般人来说并不需要自己单独训练bert，只需要加载预训练模型，就可以完成相应的任务。
 
+## Features
+
+- [x] **CPU/GPU Support**
+- [ ] **Multi-GPU Support**: [`tf.distribute.MirroredStrategy`](https://www.tensorflow.org/api_docs/python/tf/distribute/MirroredStrategy) is used to achieve Multi-GPU support for this project, which mirrors vars to distribute across multiple devices and machines. The maximum batch_size for each GPU is almost the same as [bert](https://github.com/google-research/bert/blob/master/README.md#out-of-memory-issues). So **global batch_size** depends on how many GPUs there are.
+    - Assume: num_train_examples = 32000
+    - Situation 1 (multi-gpu): train_batch_size = 8, num_gpu_cores = 4, num_train_epochs = 1
+        - global_batch_size = train_batch_size * num_gpu_cores = 32
+        - iteration_steps = num_train_examples * num_train_epochs / train_batch_size = 4000
+    - Situation 2 (single-gpu): train_batch_size = 32, num_gpu_cores = 1, num_train_epochs = 4
+        - global_batch_size = train_batch_size * num_gpu_cores = 32
+        - iteration_steps = num_train_examples * num_train_epochs / train_batch_size = 4000
+    - Result after training is equivalent between situation 1 and 2 when synchronous update on gradients is applied.
+- [x] **SavedModel Support**
+- [x] **SageMaker Training/Deploy Support**
+- [x] **TFserving Support- SavedModel Export**
+- [x] **Unbalanced Dataset Customer Loss Support**
+
+## Dependencies
+
+- Tensorflow
+  - tensorflow >= 1.11.0   # CPU Version of TensorFlow.
+  - tensorflow-gpu  >= 1.11.0  # GPU version of TensorFlow. (Upgrade to 1.14.0 when meets [ImportError: No module named 'tensorflow.python.distribute.cross_device_ops' ](https://github.com/HaoyuHu/bert-multi-gpu/issues/11))
+- NVIDIA Collective Communications Library (NCCL)
+
 ## Quick Start Guide
 ### Train
 使用`SageMaker BYOC`训练的步骤
@@ -30,7 +54,7 @@ export BERT_BASE_DIR=./bert/pretrain_model/chinese_L-12_H-768_A-12
 
 python bert/run_classifier.py \
   --data_dir='../data' \
-  --task_name='chnsenticorp' \
+  --task_name='GTProcessor' \
   --vocab_file=$BERT_BASE_DIR/vocab.txt \
   --bert_config_file=$BERT_BASE_DIR/bert_config.json \
   --output_dir=./output/ \
@@ -41,7 +65,8 @@ python bert/run_classifier.py \
   --train_batch_size=16 \
   --learning_rate=5e-5\
   --num_train_epochs=1.0\
-  --save_checkpoints_steps=100
+  --save_checkpoints_steps=100\
+  --weight_list='1,1,1'
   
 ```
 
