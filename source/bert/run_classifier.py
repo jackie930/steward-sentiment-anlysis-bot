@@ -1104,9 +1104,11 @@ def main(_):
 
 
 if __name__ == "__main__":
+    from time import *
+    begin_time = time()
+
     import logging
     import sys
-
     # get TF logger
     log = logging.getLogger('tensorflow')
     log.setLevel(logging.DEBUG)
@@ -1130,3 +1132,6 @@ if __name__ == "__main__":
     flags.mark_flag_as_required("bert_config_file")
     flags.mark_flag_as_required("output_dir")
     tf.app.run()
+    end_time = time()
+    run_time = end_time-begin_time
+    print ('<<<<<<< 该循环程序运行时间：',run_time)
