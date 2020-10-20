@@ -70,6 +70,8 @@ python bert/run_classifier.py \
   
 ```
 
+Shell script is available also (see shell_scripts/run_all.sh)
+
 * 根据`Dockerfile` 生成训练和预测的镜像，并且推送到`ECR`，注意这边需要切换到根路径
         
 ```
