@@ -48,7 +48,36 @@ cd ./source/bert/pretrain_model
 unzip chinese_L-12_H-768_A-12.zip 
 ```
 
-local test
+## run binary classification 
+```
+
+source activate tensorflow_p36
+export BERT_BASE_DIR=./bert/pretrain_model/chinese_L-12_H-768_A-12
+
+python ./bert/run_classifier.py \
+  --data_dir='../data' \
+  --task_name='chnsenticorp' \
+  --vocab_file=$BERT_BASE_DIR/vocab.txt \
+  --bert_config_file=$BERT_BASE_DIR/bert_config.json \
+  --output_dir=./output/ \
+  --do_train=true \
+  --do_eval=true \
+  --init_checkpoint=$BERT_BASE_DIR/bert_model.ckpt \
+  --max_seq_length=200 \
+  --train_batch_size=16 \
+  --learning_rate=5e-5\
+  --num_train_epochs=1.0\
+  --save_checkpoints_steps=100\
+  --weight_list='1,1' # set weight list for unbalanced data
+```
+
+Shell script is available also (see shell_scripts/run_two_classifier.sh)
+
+
+## run multi-class classification 
+
+here we use example case three class, you can change by define the class
+
 ```
 
 source activate tensorflow_p36
@@ -73,6 +102,40 @@ python bert/run_classifier.py \
 ```
 
 Shell script is available also (see shell_scripts/run_all.sh)
+
+## run multi-gpu classification 
+
+here we use example case three class, you can change by define the class
+
+```
+
+source activate tensorflow_p36
+export BERT_BASE_DIR=./bert/pretrain_model/chinese_L-12_H-768_A-12
+
+python ./bert/run_custom_classifier.py \
+    --task_name='gt' \
+    --do_lower_case=true \
+    --do_train=true \
+    --do_eval=true \
+    --do_predict=true \
+    --save_for_serving=true \
+    --data_dir='../data' \
+    --vocab_file=$BERT_BASE_DIR/vocab.txt \
+    --bert_config_file=$BERT_BASE_DIR/bert_config.json \
+    --init_checkpoint=$BERT_BASE_DIR/bert_model.ckpt \
+    --max_seq_length=128 \
+    --train_batch_size=32 \
+    --learning_rate=2e-5\
+    --num_train_epochs=1.0 \
+    --use_gpu=true \
+    --num_gpu_cores=4 \
+    --use_fp16=false \
+    --output_dir='./outputs'
+  
+```
+
+Shell script is available also (see shell_scripts/run_multi_gpu.sh)
+
 
 * 根据`Dockerfile` 生成训练和预测的镜像，并且推送到`ECR`，注意这边需要切换到根路径
         
