@@ -144,7 +144,7 @@ flags.DEFINE_bool("use_gpu", False, "Whether to use GPU.")
 
 flags.DEFINE_integer(
     "num_gpu_cores", 0,
-    "Only used if `use_gpu` is True. Total number of GPU cores to use."
+    "Only used if `use_gpu` is True. Total number of GPU cores to use.")
 
 class InputExample(object):
     """A single training/test example for simple sequence classification."""
