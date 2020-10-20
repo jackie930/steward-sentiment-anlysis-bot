@@ -1134,4 +1134,4 @@ if __name__ == "__main__":
     tf.app.run()
     end_time = time()
     run_time = end_time-begin_time
-    print ('<<<<<<< 该循环程序运行时间：',run_time)
+    tf.logging.info ('<<<<<<< 该循环程序运行时间：',run_time)
