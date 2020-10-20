@@ -18,9 +18,9 @@ export CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES}
 # execute the task
 echo "task starts..."
 
-python ./bert/run_custom_classifier.py \
-  --data_dir='../../data/label_f_stock_v2_all' \
-  --task_name='gt' \
+python ./bert/run_classifier_multi_gpu.py \
+  --data_dir='../data' \
+  --task_name='chnsenticorp' \
   --vocab_file=$BERT_BASE_DIR/vocab.txt \
   --bert_config_file=$BERT_BASE_DIR/bert_config.json \
   --output_dir=./output/ \
@@ -33,5 +33,7 @@ python ./bert/run_custom_classifier.py \
   --num_train_epochs=1.0\
   --save_checkpoints_steps=100\
   --weight_list='1,1,1'
+  ---use_gpu=true \
+  --num_gpu_cores=4
 
 echo "task is done..."

@@ -25,6 +25,13 @@ import modeling
 import optimization
 import tokenization
 import tensorflow as tf
+import numpy as np
+
+from tensorflow.python.distribute.cross_device_ops import AllReduceCrossDeviceOps
+from tensorflow.python.estimator.estimator import Estimator
+from tensorflow.python.estimator.run_config import RunConfig
+
+import custom_optimization
 
 flags = tf.flags
 
@@ -127,10 +134,17 @@ flags.DEFINE_integer(
     "num_tpu_cores", 8,
     "Only used if `use_tpu` is True. Total number of TPU cores to use.")
 
+#Config for unbalanced dataset
 flags.DEFINE_list(
     "weight_list", "1,2",
     "used for unbalanced dataset, set to 1*n if dataset is balanced.")
+#Config for multi-gpu
+# Custom Config
+flags.DEFINE_bool("use_gpu", False, "Whether to use GPU.")
 
+flags.DEFINE_integer(
+    "num_gpu_cores", 0,
+    "Only used if `use_gpu` is True. Total number of GPU cores to use."
 
 class InputExample(object):
     """A single training/test example for simple sequence classification."""
@@ -595,7 +609,7 @@ def file_based_convert_examples_to_features(
 
 
 def file_based_input_fn_builder(input_file, seq_length, is_training,
-                                drop_remainder):
+                                drop_remainder, batch_size):
     """Creates an `input_fn` closure to be passed to TPUEstimator."""
 
     name_to_features = {
@@ -622,7 +636,7 @@ def file_based_input_fn_builder(input_file, seq_length, is_training,
 
     def input_fn(params):
         """The actual input function."""
-        batch_size = params["batch_size"]
+        #batch_size = params["batch_size"]
 
         # For training, we want a lot of parallel reading and shuffling.
         # For eval, we want no shuffling and parallel reading doesn't matter.
@@ -713,7 +727,7 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
 
 def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
                      num_train_steps, num_warmup_steps, use_tpu,
-                     use_one_hot_embeddings,weight_list):
+                     use_one_hot_embeddings,weight_list, use_gpu, num_gpu_cores):
     """Returns `model_fn` closure for TPUEstimator."""
 
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
@@ -764,20 +778,33 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
                             init_string)
 
         output_spec = None
+        is_multi_gpu = use_gpu and int(num_gpu_cores) >= 2
         if mode == tf.estimator.ModeKeys.TRAIN:
-            # output loss during training https://github.com/google-research/bert/issues/70
-            #train_op = optimization.create_optimizer(
-            #    total_loss, learning_rate, num_train_steps, num_warmup_steps, use_tpu)
-            train_op, new_global_step = optimization.create_optimizer(
-                total_loss, learning_rate, num_train_steps, num_warmup_steps, use_tpu)
-            tensors_to_log = {'train loss': total_loss, 'global step': new_global_step}
-            logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=1)
-            output_spec = tf.contrib.tpu.TPUEstimatorSpec(
-                mode=mode,
-                loss=total_loss,
-                train_op=train_op,
-                training_hooks=[logging_hook],
-                scaffold_fn=scaffold_fn)
+            if is_multi_gpu:
+                train_op = custom_optimization.create_optimizer(
+                    total_loss, learning_rate, num_train_steps, num_warmup_steps)
+                tensors_to_log = {'train loss': total_loss}
+                logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=1)
+                output_spec = tf.estimator.EstimatorSpec(
+                    mode=mode,
+                    loss=total_loss,
+                    train_op=train_op,
+                    training_hooks=[logging_hook],
+                    scaffold=scaffold_fn)
+            else:
+                # output loss during training https://github.com/google-research/bert/issues/70
+                #train_op = optimization.create_optimizer(
+                #    total_loss, learning_rate, num_train_steps, num_warmup_steps, use_tpu)
+                train_op, new_global_step = optimization.create_optimizer(
+                    total_loss, learning_rate, num_train_steps, num_warmup_steps, use_tpu)
+                tensors_to_log = {'train loss': total_loss, 'global step': new_global_step}
+                logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=1)
+                output_spec = tf.contrib.tpu.TPUEstimatorSpec(
+                    mode=mode,
+                    loss=total_loss,
+                    train_op=train_op,
+                    training_hooks=[logging_hook],
+                    scaffold_fn=scaffold_fn)
         elif mode == tf.estimator.ModeKeys.EVAL:
 
             def metric_fn(per_example_loss, label_ids, logits, is_real_example):
@@ -796,16 +823,22 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
             eval_metrics = (metric_fn,
                             [per_example_loss, label_ids, logits, is_real_example])
+            #eval on single-gpu
             output_spec = tf.contrib.tpu.TPUEstimatorSpec(
                 mode=mode,
                 loss=total_loss,
                 eval_metrics=eval_metrics,
                 scaffold_fn=scaffold_fn)
         else:
-            output_spec = tf.contrib.tpu.TPUEstimatorSpec(
-                mode=mode,
-                predictions={"probabilities": probabilities},
-                scaffold_fn=scaffold_fn)
+            if is_multi_gpu:
+                output_spec = tf.estimator.EstimatorSpec(
+                    mode=mode,
+                    predictions={"probabilities": probabilities})
+            else:
+                output_spec = tf.contrib.tpu.TPUEstimatorSpec(
+                    mode=mode,
+                    predictions={"probabilities": probabilities},
+                    scaffold_fn=scaffold_fn)
         return output_spec
 
     return model_fn
@@ -934,7 +967,22 @@ def main(_):
             FLAGS.tpu_name, zone=FLAGS.tpu_zone, project=FLAGS.gcp_project)
 
     is_per_host = tf.contrib.tpu.InputPipelineConfig.PER_HOST_V2
-    run_config = tf.contrib.tpu.RunConfig(
+
+    # https://github.com/tensorflow/tensorflow/issues/21470#issuecomment-422506263
+    dist_strategy = tf.contrib.distribute.MirroredStrategy(
+        num_gpus=FLAGS.num_gpu_cores,
+        cross_device_ops=AllReduceCrossDeviceOps('nccl', num_packs=FLAGS.num_gpu_cores),
+        # cross_device_ops=AllReduceCrossDeviceOps('hierarchical_copy'),
+    )
+    log_every_n_steps = 8
+    dist_run_config = RunConfig(
+        train_distribute=dist_strategy,
+        eval_distribute=dist_strategy,
+        log_step_count_steps=log_every_n_steps,
+        model_dir=FLAGS.output_dir,
+        save_checkpoints_steps=FLAGS.save_checkpoints_steps)
+
+    tpu_run_config = tf.contrib.tpu.RunConfig(
         cluster=tpu_cluster_resolver,
         master=FLAGS.master,
         model_dir=FLAGS.output_dir,
@@ -953,26 +1001,37 @@ def main(_):
             len(train_examples) / FLAGS.train_batch_size * FLAGS.num_train_epochs)
         num_warmup_steps = int(num_train_steps * FLAGS.warmup_proportion)
 
+    init_checkpoint = FLAGS.init_checkpoint
     model_fn = model_fn_builder(
         bert_config=bert_config,
         num_labels=len(label_list),
-        init_checkpoint=FLAGS.init_checkpoint,
+        init_checkpoint=init_checkpoint,
         learning_rate=FLAGS.learning_rate,
         num_train_steps=num_train_steps,
         num_warmup_steps=num_warmup_steps,
         use_tpu=FLAGS.use_tpu,
         use_one_hot_embeddings=FLAGS.use_tpu,
-        weight_list = FLAGS.weight_list)
+        weight_list=FLAGS.weight_list,
+        use_gpu=FLAGS.use_gpu,
+        num_gpu_cores=FLAGS.num_gpu_cores)
 
     # If TPU is not available, this will fall back to normal Estimator on CPU
     # or GPU.
-    estimator = tf.contrib.tpu.TPUEstimator(
-        use_tpu=FLAGS.use_tpu,
-        model_fn=model_fn,
-        config=run_config,
-        train_batch_size=FLAGS.train_batch_size,
-        eval_batch_size=FLAGS.eval_batch_size,
-        predict_batch_size=FLAGS.predict_batch_size)
+    init_checkpoint = FLAGS.init_checkpoint
+    is_multi_gpu = FLAGS.use_gpu and int(FLAGS.num_gpu_cores) >= 2
+    if is_multi_gpu:
+        stimator = Estimator(
+            model_fn=model_fn,
+            params={},
+            config=dist_run_config)
+    else:
+        estimator = tf.contrib.tpu.TPUEstimator(
+            use_tpu=FLAGS.use_tpu,
+            model_fn=model_fn,
+            config=tpu_run_config,
+            train_batch_size=FLAGS.train_batch_size,
+            eval_batch_size=FLAGS.eval_batch_size,
+            predict_batch_size=FLAGS.predict_batch_size)
 
     if FLAGS.do_train:
         train_file = os.path.join(FLAGS.output_dir, "train.tf_record")
@@ -986,7 +1045,8 @@ def main(_):
             input_file=train_file,
             seq_length=FLAGS.max_seq_length,
             is_training=True,
-            drop_remainder=True)
+            drop_remainder=True,
+            batch_size=FLAGS.train_batch_size)
         estimator.train(input_fn=train_input_fn, max_steps=num_train_steps)
 
     if FLAGS.do_eval:
@@ -1024,7 +1084,8 @@ def main(_):
             input_file=eval_file,
             seq_length=FLAGS.max_seq_length,
             is_training=False,
-            drop_remainder=eval_drop_remainder)
+            drop_remainder=eval_drop_remainder,
+            batch_size=FLAGS.eval_batch_size)
 
         result = estimator.evaluate(input_fn=eval_input_fn, steps=eval_steps)
 
@@ -1062,7 +1123,8 @@ def main(_):
             input_file=predict_file,
             seq_length=FLAGS.max_seq_length,
             is_training=False,
-            drop_remainder=predict_drop_remainder)
+            drop_remainder=predict_drop_remainder,
+            batch_size=FLAGS.predict_batch_size)
 
         result = estimator.predict(input_fn=predict_input_fn)
 
