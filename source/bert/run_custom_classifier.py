@@ -144,7 +144,9 @@ flags.DEFINE_integer(
 )
 
 flags.DEFINE_bool("use_fp16", False, "Whether to use fp16.")
-
+flags.DEFINE_list(
+    "weight_list", "1,1,1",
+    "used for unbalanced dataset, set to 1*n if dataset is balanced.")
 
 class InputExample(object):
     """A single training/test example for simple sequence classification."""
@@ -710,7 +712,7 @@ def _truncate_seq_pair(tokens_a, tokens_b, max_length):
 
 
 def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
-                 labels, num_labels, use_one_hot_embeddings, fp16):
+                 labels, num_labels, use_one_hot_embeddings, fp16,weight_list):
     """Creates a classification model."""
     #comp_type = tf.float16 if fp16 else tf.float32
     model = modeling.BertModel(
@@ -744,20 +746,35 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
 
         logits = tf.matmul(output_layer, output_weights, transpose_b=True)
         logits = tf.nn.bias_add(logits, output_bias)
-        probabilities = tf.nn.softmax(logits, axis=-1)
-        log_probs = tf.nn.log_softmax(logits, axis=-1)
 
+        #probabilities = tf.nn.softmax(logits, axis=-1)
+        #log_probs = tf.nn.log_softmax(logits, axis=-1)
+        #one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
+        #per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
+        #loss = tf.reduce_mean(per_example_loss)
+        # add class weights for logits
+
+        #TODO: fix weight setting
+        weight_list = [float(i) for i in weight_list]
+        class_weight = tf.constant(weight_list)
+        tf.logging.info ("<<<<<< logits: ", logits)
+        print (class_weight)
+        weighted_logits = tf.multiply(logits, class_weight)
+        probabilities = tf.nn.softmax(weighted_logits, axis=-1)
+        log_probs = tf.nn.log_softmax(weighted_logits, axis=-1)
         one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
 
-        per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
+        per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs , axis=-1)
         loss = tf.reduce_mean(per_example_loss)
+        tf.logging.info("*** loss weight  ***", weight_list)
+        print ("###loss weight ")
 
         return (loss, per_example_loss, logits, probabilities)
 
 
 def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
                      num_train_steps, num_warmup_steps, use_tpu,
-                     use_one_hot_embeddings, use_gpu, num_gpu_cores, fp16):
+                     use_one_hot_embeddings, use_gpu, num_gpu_cores, fp16,weight_list):
     """Returns `model_fn` closure for TPUEstimator."""
 
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
@@ -781,7 +798,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
         (total_loss, per_example_loss, logits, probabilities) = create_model(
             bert_config, is_training, input_ids, input_mask, segment_ids, label_ids,
-            num_labels, use_one_hot_embeddings, fp16)
+            num_labels, use_one_hot_embeddings, fp16, weight_list)
 
         tvars = tf.trainable_variables()
         initialized_variable_names = {}
@@ -1054,7 +1071,8 @@ def main(_):
         use_one_hot_embeddings=FLAGS.use_tpu,
         use_gpu=FLAGS.use_gpu,
         num_gpu_cores=FLAGS.num_gpu_cores,
-        fp16=FLAGS.use_fp16)
+        fp16=FLAGS.use_fp16,
+        weight_list = FLAGS.weight_list)
 
     # If TPU is not available, this will fall back to normal Estimator on CPU
     # or GPU.
@@ -1112,7 +1130,8 @@ def main(_):
             use_one_hot_embeddings=FLAGS.use_tpu,
             use_gpu=FLAGS.use_gpu,
             num_gpu_cores=FLAGS.num_gpu_cores,
-            fp16=FLAGS.use_fp16)
+            fp16=FLAGS.use_fp16,
+            weight_list = FLAGS.weight_list)
 
         eval_estimator = tf.contrib.tpu.TPUEstimator(
             use_tpu=FLAGS.use_tpu,
