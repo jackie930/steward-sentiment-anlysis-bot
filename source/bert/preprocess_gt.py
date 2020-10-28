@@ -38,6 +38,9 @@ def process_data_train(input_train_file,save_path):
     df1 = df[['label','text_a']]
     print (df1.label.unique())
     df1.columns=['label','text_a']
+    #count the distribution
+    gp=df.groupby(by=['label'])
+    print ("<<<< TRAIN LABEL Distribution", gp.size())
     df1.to_csv(os.path.join(save_path,'train.tsv'),sep='\t',index=False)
     print ("<<<< save train result")
     print ("<<<<<<df shape",df1.shape)
