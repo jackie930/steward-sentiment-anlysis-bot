@@ -24,6 +24,7 @@ python ./bert/run_custom_classifier.py \
     --num_gpu_cores=4 \
     --use_fp16=false \
     --output_dir='./outputs'
+    --weight_list='10,1,9'
 
 echo "task is done..."
 

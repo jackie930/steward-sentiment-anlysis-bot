@@ -42,8 +42,8 @@ def main(test_output_path,test_org_path,save_path):
     print ("macro recall_score",r)
 
 if __name__ == "__main__":
-    test_output_path=''
-    test_org_path=''
-    save_path=''
+    test_output_path='../outputs/test_results.tsv'
+    test_org_path='../../experiments/exp4/org_pred.csv'
+    save_path='../../experiments/exp4/res.csv'
     main(test_output_path,test_org_path,save_path)
 
