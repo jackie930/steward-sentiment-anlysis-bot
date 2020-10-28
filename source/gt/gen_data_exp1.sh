@@ -8,7 +8,7 @@ aws s3 cp s3://cathysite-ecv ../gt_data --recursive
 unzip "../gt_data/*.zip" -d ../gt_data/
 
 #run preprocess
-python ../bert/preprocess_gt.py
+python ./bert/preprocess_gt.py
 
 echo "task is done..."
 
