@@ -12,7 +12,7 @@ python ./bert/run_custom_classifier.py \
     --do_eval=true \
     --do_predict=true \
     --save_for_serving=true \
-    --data_dir='/home/ec2-user/SageMaker/gt/experiments/exp3' \
+    --data_dir='../experiments/exp3' \
     --vocab_file=$BERT_BASE_DIR/vocab.txt \
     --bert_config_file=$BERT_BASE_DIR/bert_config.json \
     --init_checkpoint=$BERT_BASE_DIR/bert_model.ckpt \
