@@ -49,28 +49,28 @@ def main(pred_folder,input_train_file,save_path):
 if __name__ == "__main__":
     #exp1, hind, imbalanced
     print ("<<<<EXP 1")
-    pred_folder = '/home/ec2-user/SageMaker/gt/experiment_org/aws_results_v2/hind'
-    input_train_file = '/home/ec2-user/SageMaker/gt/experiment_org/exp_v2/exp_h_v2.csv'
-    save_path =  '/home/ec2-user/SageMaker/gt/experiments/exp1'
+    pred_folder = '../gt_data/aws_results_v2/hind'
+    input_train_file = '../gt_data/exp_v2/exp_h_v2.csv'
+    save_path =  '../experiments/exp1'
     main(pred_folder,input_train_file,save_path)
 
     #exp2, hind, enhanced
     print ("<<<<EXP 2")
-    pred_folder = '/home/ec2-user/SageMaker/gt/experiment_org/aws_results_v2/hind'
-    input_train_file = '/home/ec2-user/SageMaker/gt/experiment_org/exp_v2/exp_h_enhance_v2.csv'
-    save_path =  '/home/ec2-user/SageMaker/gt/experiments/exp2'
+    pred_folder = '../gt_data/aws_results_v2/hind'
+    input_train_file = '../gt_data/exp_v2/exp_h_enhance_v2.csv'
+    save_path =  '../experiments/exp2'
     main(pred_folder,input_train_file,save_path)
 
     #exp3 fore, imbalanced
     print ("<<<<EXP 3")
-    pred_folder = '/home/ec2-user/SageMaker/gt/experiment_org/aws_results_v2/fore'
-    input_train_file = '/home/ec2-user/SageMaker/gt/experiment_org/exp_v2/exp_f_v2.csv'
-    save_path =  '/home/ec2-user/SageMaker/gt/experiments/exp3'
+    pred_folder = '../gt_data/aws_results_v2/fore'
+    input_train_file = '../gt_data/exp_v2/exp_f_v2.csv'
+    save_path =  '../experiments/exp3'
     main(pred_folder,input_train_file,save_path)
 
     #exp4 fore, enhanced
     print ("<<<<EXP 4")
-    pred_folder = '/home/ec2-user/SageMaker/gt/experiment_org/aws_results_v2/fore'
-    input_train_file = '/home/ec2-user/SageMaker/gt/experiment_org/exp_v2/exp_f_enhance_v2.csv'
-    save_path =  '/home/ec2-user/SageMaker/gt/experiments/exp4'
+    pred_folder = '../gt_data/aws_results_v2/fore'
+    input_train_file = '../gt_data/exp_v2/exp_f_enhance_v2.csv'
+    save_path =  '../experiments/exp4'
     main(pred_folder,input_train_file,save_path)

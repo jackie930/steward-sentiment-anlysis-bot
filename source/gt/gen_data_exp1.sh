@@ -5,7 +5,7 @@ echo "task starts..."
 #download data from s3
 mkdir ../gt_data
 aws s3 cp s3://cathysite-ecv ../gt_data --recursive
-unzip ../gt_data/*.zip
+unzip "../gt_data/*.zip" -d ../gt_data/
 
 #run preprocess
 python ../bert/preprocess_gt.py
