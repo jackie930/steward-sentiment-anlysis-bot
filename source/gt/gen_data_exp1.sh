@@ -9,6 +9,11 @@ unzip "../gt_data/*.zip" -d ../gt_data/
 
 #run preprocess
 mkdir ../experiments
+mkdir ../experiments/exp1
+mkdir ../experiments/exp2
+mkdir ../experiments/exp3
+mkdir ../experiments/exp4
+
 python ./bert/preprocess_gt.py
 
 echo "task is done..."
