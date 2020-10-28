@@ -21,7 +21,7 @@ python ./bert/run_custom_classifier.py \
     --learning_rate=2e-5\
     --num_train_epochs=10.0 \
     --use_gpu=true \
-    --num_gpu_cores=4 \
+    --num_gpu_cores=8 \
     --use_fp16=false \
     --output_dir='./outputs'
 
