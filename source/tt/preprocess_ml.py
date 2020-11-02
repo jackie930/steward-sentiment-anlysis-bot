@@ -33,7 +33,7 @@ if __name__ == "__main__":
     #exp4 fore, enhanced
     print ("<<<<Start")
     input_file = '/Users/liujunyi/Desktop/spottag/tcl/data.csv'
-    save_path = './res'
+    save_path = './res_mlabel'
     label_col1 = 'x5'
     label_col2 = 'x6'
     text_col = 'text'
