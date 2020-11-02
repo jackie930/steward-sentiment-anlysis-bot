@@ -30,7 +30,7 @@ from tensorflow.python.estimator.estimator import Estimator
 from tensorflow.python.estimator.run_config import RunConfig
 
 import custom_optimization
-import modeling
+import modeling2 as modeling
 import optimization
 import tokenization
 

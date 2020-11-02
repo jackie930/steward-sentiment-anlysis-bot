@@ -15,7 +15,14 @@ def process_data(input_file,label_col1,label_col2,text_col,save_path):
     print (df.head())
     # save as defined
     df1 = df[[text_col,label_col1,label_col2]]
-    df1.columns=['text_a','label_0','label_1']
+    label_col1_list = df[label_col1].unique().tolist()
+    label_col2_list = df[label_col2].unique().tolist()
+
+    df1['label_0'] = df1[label_col1].apply(lambda x: label_col1_list.index(x))
+    df1['label_1'] = df1[label_col2].apply(lambda x: label_col2_list.index(x))
+
+    df1 = df1[['text','label_0','label_1']]
+    df1.columns = ['text_a','label_0','label_1']
     print (df1.head())
 
     if not os.path.exists(save_path):
