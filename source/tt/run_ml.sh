@@ -5,7 +5,7 @@ export BERT_BASE_DIR=./bert/pretrain_model/chinese_L-12_H-768_A-12
 # execute the task
 echo "task starts..."
 
-python run_custom_classifier_mlabel.py \
+python ./bert/run_custom_classifier_mlabel.py \
   --num_labels=2 \
   --task_name='Mlabel' \
   --do_lower_case=true \
