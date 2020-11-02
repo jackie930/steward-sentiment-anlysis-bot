@@ -28,7 +28,7 @@
 - [x] **TFserving Support- SavedModel Export**
 - [x] **Unbalanced Dataset Customer Loss Support**
 - [x] **Multi-Class Support**
-- [ ] **Multi-Label Support**
+- [x] **Multi-Label Support**
 
 ## Dependencies
 
