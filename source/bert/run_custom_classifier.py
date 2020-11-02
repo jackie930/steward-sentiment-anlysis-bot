@@ -145,7 +145,7 @@ flags.DEFINE_integer(
 
 flags.DEFINE_bool("use_fp16", False, "Whether to use fp16.")
 flags.DEFINE_list(
-    "weight_list", "1,1,1",
+    "weight_list", "1,1,1,1",
     "used for unbalanced dataset, set to 1*n if dataset is balanced.")
 
 class InputExample(object):
