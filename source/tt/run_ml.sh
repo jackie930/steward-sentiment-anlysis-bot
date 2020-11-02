@@ -24,7 +24,7 @@ python ./bert/run_custom_classifier_mlabel.py \
   --use_gpu=true \
   --num_gpu_cores=8 \
   --use_fp16=false \
-  --output_dir='./outputs'
+  --output_dir='./outputs_mlabel'
 
 echo "task is done..."
 
