@@ -54,7 +54,8 @@ unzip chinese_L-12_H-768_A-12.zip
 source activate tensorflow_p36
 export BERT_BASE_DIR=./bert/pretrain_model/chinese_L-12_H-768_A-12
 
-python ./bert/run_classifier.py \
+
+nohup python -u ./bert/run_classifier.py \
   --data_dir='../data' \
   --task_name='chnsenticorp' \
   --vocab_file=$BERT_BASE_DIR/vocab.txt \
@@ -66,9 +67,9 @@ python ./bert/run_classifier.py \
   --max_seq_length=200 \
   --train_batch_size=16 \
   --learning_rate=5e-5\
-  --num_train_epochs=1.0\
+  --num_train_epochs=5.0\
   --save_checkpoints_steps=100\
-  --weight_list='1,1' # set weight list for unbalanced data
+  --weight_list='1,1' > train.log 2>&1 &
 ```
 
 Shell script is available also (see shell_scripts/run_two_classifier.sh)
@@ -83,7 +84,8 @@ here we use example case three class, you can change by define the class
 source activate tensorflow_p36
 export BERT_BASE_DIR=./bert/pretrain_model/chinese_L-12_H-768_A-12
 
-python bert/run_classifier.py \
+
+nohup python -u python bert/run_classifier.py \
   --data_dir='../data' \
   --task_name='GTProcessor' \
   --vocab_file=$BERT_BASE_DIR/vocab.txt \
@@ -112,7 +114,7 @@ here we use example case three class, you can change by define the class
 source activate tensorflow_p36
 export BERT_BASE_DIR=./bert/pretrain_model/chinese_L-12_H-768_A-12
 
-python ./bert/run_custom_classifier.py \
+nohup python -u ./bert/run_custom_classifier.py \
     --task_name='gt' \
     --do_lower_case=true \
     --do_train=true \
@@ -130,7 +132,7 @@ python ./bert/run_custom_classifier.py \
     --use_gpu=true \
     --num_gpu_cores=4 \
     --use_fp16=false \
-    --output_dir='./outputs'
+    --output_dir='./outputs' > train.log 2>&1 &
   
 ```
 
