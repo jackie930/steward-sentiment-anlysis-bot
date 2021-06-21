@@ -1,5 +1,5 @@
 # steward-sentiment-anlysis-bot
-基于Google-Bert,进行 `Sentiment Analysis` 的任务 和 `ner`的部分， 其中`ner`部分的操作指南参考链接（see documentation [here](ner/README.md)）, 并利用`AWS SageMaker`进行模型训练和部署。
+基于Google-Bert,进行 `Sentiment Analysis` 的任务 和 `ner`的部分， 其中`ner`部分代码目录在`/ner`下，的操作指南参考链接（see documentation [here](ner/README.md)）, 并利用`AWS SageMaker`进行模型训练和部署。
 
 ## Data
 本解决方案使用的数据分为两部分，预训练模型的数据和
